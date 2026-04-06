@@ -1,1 +1,94 @@
 <!-- Layout for all pages -->
+
+<!DOCTYPE html>
+
+<html>
+
+<head>
+    <meta charset= "UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hotel Management App</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            background: #f4f4f4;
+        }
+        nav {
+            background: #2c3e50;
+            padding: 20px;
+            color: white;
+        }
+        nav a {
+            color: white;
+            margin-right: 10px;
+            text-decoration: none;
+        }
+        nav a:hover {
+            text-decoration: underline;
+        }
+        nav .right {
+            float: right;
+        }
+        .container {
+            padding: 40px;
+            width: 60%;
+            margin: 0 auto;
+        }
+        h1, h2 {
+            color: #2c3e50;
+        }
+        table {
+            width: 100%;
+            border: 1px solid #ccc;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid #ccc;
+            padding: 8px;
+        }
+        input, select {
+            padding: 5px;
+            margin: 5px 0;
+        }
+        button {
+            padding: 6px 12px;
+        }
+    </style>
+</head>
+
+<body>
+    <nav>
+        <Strong>Hotel Management</Strong>
+        {% if session.role == 'customer' %}
+            <a href="{{url_for('search')}} >Search Available Rooms</a>
+            <a href="{{url_for('view_bookings')}}>View Bookings</a>
+            <a href="{{url_for('views')}}" = View room</a>
+        {% elif session.role == 'Employee' %}
+             <a href="{{ url_for('employee_dashboard') }}">Dashboard</a>
+            <a href="{{ url_for('search') }}">Search Rooms</a>
+            <a href="{{ url_for('process_walkins') }}">Walk-in Renting</a>
+            <a href="{{ url_for('manage_customers') }}">Customers</a>
+            <a href="{{ url_for('manage_employees') }}">Employees</a>
+            <a href="{{ url_for('manage_hotels') }}">Hotels</a>
+            <a href="{{ url_for('manage_rooms') }}">Rooms</a>
+            <a href="{{ url_for('views') }}">Views</a>
+        {% endif %}
+        <div>
+            {% if session.user_name %}
+            <span style="font-size:0.85em; color:#b8bec1;">
+                {{ session.role | capitalize }}: {{ session.user_name }}
+            </span>
+            &nbsp;
+            <a href="{{ url_for('logout') }}" style="color:#ff1900;">Logout</a>
+            {% endif %}
+        </div>
+    </nav>
+
+    <div class="container"> 
+        {% block content %}{% endblock %}
+    </div>
+
+
+</body>
+</html>
