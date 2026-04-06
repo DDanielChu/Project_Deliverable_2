@@ -10,17 +10,17 @@
 <table>
 
   <thead>
-    <tr>
-      <th>Booking ID</th>
-      <th>Hotel</th>
-      <th>Room</th>
-      <th>Start</th>
-      <th>End</th>
-      <th>Price/Night</th>
-      <th>View</th>
-      <th>Status</th>
-      <th>Action</th>
-    </tr>
+        <tr>
+            <th>Booking ID</th>
+            <th>Hotel</th>
+            <th>Room</th>
+            <th>Start</th>
+            <th>End</th>
+            <th>Price/Night</th>
+            <th>View</th>
+            <th>Status</th>
+            <th>Action</th>
+        </tr>
   </thead>
 
   <tbody>
@@ -56,4 +56,5 @@
 {% else %}
     <p style="color:#777;">You have no bookings yet. <a href="{{ url_for('search') }}">Search.</a></p>
 {% endif %}
+
 {% endblock %}
