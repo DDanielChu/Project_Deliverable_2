@@ -1,1 +1,62 @@
-<!-- page for processing direct renting with no bookings -->
+<!-- page for processing rentings with no bookings -->
+
+{% extends "base.html" %}
+{% block content %}
+<h1>Walk-in Renting</h1>
+<p style="color:#777; margin-bottom:20px;">Process a renting for a customer who arrived without a booking.</p>
+
+<div style="max-width:600px;">
+  <form method="POST">
+
+    <div>
+      <div>
+        <label>Customer</label>
+        <select name="customer_id" required>
+          <option value="">Select customer...</option>
+          {% for c in customers %}
+            <option value="{{ c.customer_id }}"
+              {% if request.args.get('customer_id')|string == c.customer_id|string %}selected{% endif %}>
+              #{{c.customer_id }} — {{ c.first_name }} {{ c.last_name }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Room</label>
+        <select name="room_id" required>
+          <option value="">Select room...</option>
+          {% for r in rooms %}
+            <option value="{{ r.room_id }}"
+              {% if request.args.get('room_id')|string == r.room_id|string %}selected{% endif %}>
+              Room {{ r.room_id }} — ${{ "%.2f"|format(r.price) }}/night — Cap: {{ r.capacity_of_room }} — {{ r.type_of_view }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Start Date</label>
+        <input type="date" name="start_date" required>
+      </div>
+      <div class="form-group">
+        <label>End Date</label>
+        <input type="date" name="end_date" required>
+      </div>
+      <div class="form-group">
+        <label>Payment Method</label>
+        <select name="payment_method" required>
+          <option value="">Select...</option>
+          <option value="CREDIT CARD">Credit Card</option>
+          <option value="DEBIT CARD">Debit Card</option>
+          <option value="CASH">Cash</option>
+        </select>
+      </div>
+    </div>
+    <button class="btn btn-warning">Create Walk-in Renting</button>
+    <a href="{{ url_for('employee_dashboard') }}" class="btn btn-secondary" style="margin-left:8px;">Cancel</a>
+  </form>
+</div>
+{% endblock %}
