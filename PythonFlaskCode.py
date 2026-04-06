@@ -1,8 +1,9 @@
-from flask import Flask, redirect, url_for, request
+from flask import Flask, redirect, url_for, request, render_template, session
 import psycopg2
 
 
 app = Flask(__name__)
+app.secret_key = "batman"
 
 def get_db_connection():
     conn = psycopg2.connect(
@@ -116,15 +117,17 @@ def get_data_from_database(start_date, end_date, room_capacity, area, hotel_chai
 
 @app.route("/")
 def home():
+    session.clear()
+    return render_template("home_page.html")
 
-    list = get_data_from_database(None, None, None, None, None,  None, None, None)
+    # list = get_data_from_database(None, None, None, None, None,  None, None, None)
 
-    string = ""
+    # string = ""
 
-    for x in list:
-        string += str(x) +"<br><br>"
+    # for x in list:
+    #     string += str(x) +"<br><br>"
 
-    return string
+    # return string
 
 
 
@@ -154,6 +157,68 @@ def room():
         string += " No Area Received"
 
     return "Rooms route is working " + string  
+
+
+
+@app.route("/set-role", methods=["POST"])
+def set_role():
+    role = request.form["role"]
+    session["role"] = role
+
+    if role == "customer":
+        return redirect(url_for("customer_login"))
+
+    else:
+        return render_template("employee_login.html")
+
+
+@app.route("/search")
+def search():
+    return render_template("search.html")
+
+
+@app.route("/view_bookings")
+def view_bookings():
+    return render_template("view_bookings.html")
+
+
+@app.route("/views")
+def views():
+    return render_template("views.html")
+
+
+@app.route("/customer_login")
+def customer_login():
+    return render_template("customer_login.html")
+
+
+@app.route("/walkin")
+def walkin():
+    return render_template("process_walkins.html")
+
+
+@app.route("/employee_dashboard")
+def employee_dashboard():
+    return render_template("employee_dashboard.html")
+
+@app.route("/manage_customers")
+def manage_customers():
+    return render_template("manage_customers.html")
+
+
+@app.route("/manage_employees")
+def manage_employees():
+    return render_template("manage_employees.html")
+
+
+@app.route("/manage_hotels")
+def manage_hotels():
+    return render_template("manage_hotels.html")
+
+
+@app.route("/manage_rooms")
+def manage_rooms():
+    return render_template("manage_rooms.html")
 
 
 if __name__ == "__main__":

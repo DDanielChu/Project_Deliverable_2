@@ -1,6 +1,6 @@
 <!-- Sets customer info -->
 
-{% extends "layoout.html" %}
+{% extends "layout.html" %}
 {% block content %}
 
 <div style="max-width:380px; margin:60px auto;">
@@ -15,7 +15,7 @@
     </form>
     <p style="margin-top:15px; font-size:0.85em; color:#777;">Don't have an account? Ask an employee to register you.</p>
   </div>
-  <a href="{{ url_for('index') }}"><- Back</a>
+  <a href="{{ url_for('home') }}"><- Back</a>
 </div>
 
 {% endblock %}
