@@ -68,8 +68,8 @@
         <input type="number" name="min_rooms" value="{{ min_rooms }}" min="1" placeholder="Any" onchange="this.form.submit()">
       </div>
     </div>
-    <button type="submit" class="btn btn-primary">Search</button>
-    <a href="/search" class="btn btn-secondary" style="margin-left:8px;">Clear</a>
+    <button type="submit" class="btn button">Search</button>
+    <a href="/search" class="btn button" style="margin-left:8px;">Clear</a>
   </form>
 </div>
  
@@ -82,9 +82,9 @@
   </h2>
  
   {% if rooms %}
-    <div class="card-grid">
+    <div>
       {% for r in rooms %}
-      <div class="card">
+      <div>
         <h3>Hotel #{{ r.hotel_id }} — Room {{ r.room_id }}</h3>
         <p>{{ r.city }}, {{ r.province }}</p>
         <p>{{ r.chain_name }} &nbsp;|&nbsp; {{ '⭐' * r.star_number }}</p>
@@ -94,7 +94,7 @@
         <p>Total rooms in hotel: {{ r.total_rooms_in_hotel }}</p>
         <div class="price">${{ "%.2f"|format(r.price) }} / night</div>
  
-        {% if session.role == 'customer' %}
+        {% if session.role == 'customer' and session.get('customer_id') %}
           <form method="POST" action="/book">
             <input type="hidden" name="hotel_id"   value="{{ r.hotel_id }}">
             <input type="hidden" name="room_id"    value="{{ r.room_id }}">
@@ -116,14 +116,15 @@
     </div>
  
 
-  {% else %}
+{% else %}
     <p style="color:#777; padding:20px 0;">
-      No available rooms match your criteria. Try adjusting the filters.
+        No available rooms match your criteria. Try adjusting the filters.
     </p>
-  {% endif %}
+{% endif %}
  
 
 {% else %}
-  <p style="color:#777; padding:20px 0;">Enter start and end dates above to see available rooms.</p>
+    <p style="color:#777; padding:20px 0;">Enter start and end dates above to see available rooms.</p>
 {% endif %}
+
 {% endblock %}

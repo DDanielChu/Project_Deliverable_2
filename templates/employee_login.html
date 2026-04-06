@@ -5,16 +5,16 @@
 
 <div style="max-width:380px; margin:60px auto;">
   <h1>Employee Login</h1>
-  <div class="form-box">
+  <div>
     <form method="POST">
-      <div class="form-group" style="margin-bottom:15px;">
+      <div style="margin-bottom:15px;">
         <label>Employee SSN</label>
         <input type="text" name="ssn" required placeholder="e.g. 123-45-6789">
       </div>
       <button class="btn button" style="width:100%;">Login</button>
     </form>
   </div>
-  <a href="{{ url_for('home') }}">← Back</a>
+  <a href="{{ url_for('home') }}"><- Back</a>
 </div>
 
 {% endblock %}
