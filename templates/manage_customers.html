@@ -1,1 +1,51 @@
 <!-- Create, update, delete customers -->
+
+{% extends "layout.html" %}
+{% block content %}
+
+<h1>Manage Customers</h1>
+ 
+<!-- Add customer-->
+<h2>Add New Customer</h2>
+<div>
+  <form method="POST" action="/manage/customers/add">
+    <div>
+        <label>First Name</label><input name="first_name" required>
+        <label>Middle Name</label><input name="middle_name">
+        <label>Last Name</label><input name="last_name" required>
+    </div>
+
+    <div>
+        <label>Street #</label><input name="street_number" type="number" required>
+        <label>Street Name</label><input name="street_name" required>
+        <label>Apt #</label><input name="apt_number">
+    </div>
+
+    <div >
+        <label>City</label><input name="city" required>
+        <label>Province</label><input name="province" required>
+        <label>ZIP</label><input name="zip" required>
+    </div>
+
+    <div>
+        <label>ID Type</label>
+        <select name="type_of_id" required>
+            <option value="">Select...</option>
+            <option value="SSN">SSN</option>
+            <option value="SIN">SIN</option>
+            <option value="Driving Licence">Driving Licence</option>
+        </select>
+    </div>
+
+    <div>
+        <label>ID Value</label><input name="id_value" required>
+        <div>
+            <label>Date of Registration</label>
+            <input type="date" name="date_of_registration" required>
+        </div>
+    </div>
+
+    <button class="btn button">Add Customer</button>
+  </form>
+</div>
+ 
