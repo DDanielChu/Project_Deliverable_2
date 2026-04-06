@@ -1,1 +1,58 @@
 <!-- Page for customer to see and manage their bookings -->
+
+{% extends "base.html" %}
+{% block content %}
+
+<h1>My Bookings</h1>
+ 
+
+{% if bookings %}
+<table>
+
+  <thead>
+    <tr>
+      <th>Booking ID</th>
+      <th>Hotel</th>
+      <th>Room</th>
+      <th>Start</th>
+      <th>End</th>
+      <th>Price/Night</th>
+      <th>View</th>
+      <th>Status</th>
+      <th>Action</th>
+    </tr>
+  </thead>
+
+  <tbody>
+    {% for b in bookings %}
+    <tr>
+      <td>{{ b.booking_id }}</td>
+      <td>{{ b.city }}, {{ b.province }} (Hotel #{{ b.hotel_id }}) {{ '⭐' * b.star_number }}</td>
+      <td>{{ b.room_id }}</td>
+      <td>{{ b.start_date }}</td>
+      <td>{{ b.end_date }}</td>
+      <td>${{ "%.2f"|format(b.price) }}</td>
+      <td>{{ b.type_of_view }}</td>
+      <td>
+        <span class="badge badge-{{ b.status | lower }}">{{ b.status }}</span>
+      </td>
+      <td>
+        {% if b.status in ('PENDING', 'CONFIRMED') %}
+          <form method="POST" action="/cancel-booking/{{ b.booking_id }}"
+                onsubmit="return confirm('Cancel this booking?')">
+            <button class="btn button" style="padding:4px 10px; font-size:0.8em;">
+              Cancel
+            </button>
+          </form>
+        {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+
+{% else %}
+  <p style="color:#777;">You have no bookings yet. <a href="{{ url_for('search') }}">Search.</a></p>
+{% endif %}
+{% endblock %}
