@@ -1,1 +1,129 @@
 <!-- Search page for making bookings and rentings with all of the filters -->
+
+{% extends "layout.html" %}
+{% block content %}
+
+<h1>View Avialable Rooms</h1>
+
+<!-- Filters -->
+<div class="container">
+  <form method="GET" action="/search" id="searchForm">
+
+    <div>
+      <div>
+        <label>Start Date *</label>
+        <input type="date" name="start_date" value="{{ start_date }}" required onchange="this.form.submit()">
+      </div>
+      <div>
+        <label>End Date *</label>
+        <input type="date" name="end_date" value="{{ end_date }}" required onchange="this.form.submit()">
+      </div>
+      <div>
+        <label>Min Capacity</label>
+        <input type="number" name="capacity" value="{{ capacity }}" min="1" placeholder="Any" onchange="this.form.submit()">
+      </div>
+      <div>
+        <label>Max Price per Night ($)</label>
+        <input type="number" name="max_price" value="{{ max_price }}" min="0" step="0.01" placeholder="Any" onchange="this.form.submit()">
+      </div>
+    </div>
+
+    <div>
+      <div>
+        <label>City</label>
+        <select name="city" onchange="this.form.submit()">
+          <option value="">Any City</option>
+          {% for c in cities %}
+            <option value="{{ c.city }}" {% if city == c.city %}selected{% endif %}>
+              {{ c.city }}, {{ c.province }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label>Hotel Chain</label>
+        <select name="chain_id" onchange="this.form.submit()">
+          <option value="">Any Chain</option>
+          {% for ch in chains %}
+            <option value="{{ ch.chain_id }}" {% if chain_id|string == ch.chain_id|string %}selected{% endif %}>
+              {{ ch.hotel_name }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div>
+        <label>Hotel Stars</label>
+        <select name="stars" onchange="this.form.submit()">
+          <option value="">Any Stars</option>
+          {% for s in [1,2,3,4,5] %}
+            <option value="{{ s }}" {% if stars|string == s|string %}selected{% endif %}>
+              {{ '⭐' * s }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Min Rooms in Hotel</label>
+        <input type="number" name="min_rooms" value="{{ min_rooms }}" min="1" placeholder="Any" onchange="this.form.submit()">
+      </div>
+    </div>
+    <button type="submit" class="btn btn-primary">Search</button>
+    <a href="/search" class="btn btn-secondary" style="margin-left:8px;">Clear</a>
+  </form>
+</div>
+ 
+
+<!-- Results-->
+{% if start_date and end_date %}
+  <h2>
+    {{ rooms|length }} room(s) available
+    {% if start_date and end_date %}from {{ start_date }} to {{ end_date }}{% endif %}
+  </h2>
+ 
+  {% if rooms %}
+    <div class="card-grid">
+      {% for r in rooms %}
+      <div class="card">
+        <h3>Hotel #{{ r.hotel_id }} — Room {{ r.room_id }}</h3>
+        <p>{{ r.city }}, {{ r.province }}</p>
+        <p>{{ r.chain_name }} &nbsp;|&nbsp; {{ '⭐' * r.star_number }}</p>
+        <p>Capacity: {{ r.capacity_of_room }} guests</p>
+        <p>View: {{ r.type_of_view | capitalize }}</p>
+        <p>Bed extension: {{ r.extension_of_bed }}</p>
+        <p>Total rooms in hotel: {{ r.total_rooms_in_hotel }}</p>
+        <div class="price">${{ "%.2f"|format(r.price) }} / night</div>
+ 
+        {% if session.role == 'customer' %}
+          <form method="POST" action="/book">
+            <input type="hidden" name="hotel_id"   value="{{ r.hotel_id }}">
+            <input type="hidden" name="room_id"    value="{{ r.room_id }}">
+            <input type="hidden" name="start_date" value="{{ start_date }}">
+            <input type="hidden" name="end_date"   value="{{ end_date }}">
+            <button class="btn button" style="width:100%; margin-top:8px;">Book This Room</button>
+          </form>
+ 
+        {% elif session.role == 'employee' %}
+          <a href="{{ url_for('walkin') }}?hotel_id={{ r.hotel_id }}&room_id={{ r.room_id }}"
+             class="btn button" style="display:block; text-align:center; margin-top:8px;">Walk-in Renting</a>
+        {% else %}
+          <p style="font-size:0.8em; color:#999; margin-top:8px;">
+            <a href="{{ url_for('customer_login') }}">Login as customer</a> to book.
+          </p>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+ 
+
+  {% else %}
+    <p style="color:#777; padding:20px 0;">
+      No available rooms match your criteria. Try adjusting the filters.
+    </p>
+  {% endif %}
+ 
+
+{% else %}
+  <p style="color:#777; padding:20px 0;">Enter start and end dates above to see available rooms.</p>
+{% endif %}
+{% endblock %}
