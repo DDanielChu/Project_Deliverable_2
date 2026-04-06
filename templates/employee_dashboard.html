@@ -1,1 +1,61 @@
 <!-- Page for employees to convert bookings to rentings and insert payment details -->
+
+{% extends "base.html" %}
+{% block content %}
+<h1>Employee Dashboard</h1>
+<p style="color:#777; margin-bottom:20px;">Hotel #{{ session.hotel_id }} — Logged in as {{ session.user_name }}</p>
+
+<h2>Pending Check-ins (Active Bookings at Your Hotel)</h2>
+
+{% if pending %}
+    <table>
+        <thead>
+            <tr>
+            <th>Booking ID</th>
+            <th>Customer</th>
+            <th>Room</th>
+            <th>Start</th>
+            <th>End</th>
+            <th>Price/Night</th>
+            <th>Status</th>
+            <th>Convert to Renting</th>
+            </tr>
+        </thead>
+        
+        <tbody>
+            {% for b in pending %}
+            <tr>
+            <td>{{ b.booking_id }}</td>
+            <td>{{ b.first_name }} {{ b.last_name }} (ID: {{ b.customer_id }})</td>
+            <td>{{ b.room_id }}</td>
+            <td>{{ b.start_date }}</td>
+            <td>{{ b.end_date }}</td>
+            <td>${{ "%.2f"|format(b.price) }}</td>
+            <td><span class="badge badge-{{ b.status | lower }}">{{ b.status }}</span></td>
+            <td>
+                <form method="POST" action="/employee/checkin/{{ b.booking_id }}"
+                    style="display:flex; gap:6px; align-items:center;">
+                <select name="payment_method" required style="padding:5px;">
+                    <option value="">Payment: </option>
+                    <option value="CREDIT CARD">Credit Card</option>
+                    <option value="DEBIT CARD">Debit Card</option>
+                    <option value="CASH">Cash</option>
+                </select>
+                <button class="btn button" style="padding:5px 12px; ">Check In
+                </button>
+                </form>
+            </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+{% else %}
+    <p style="color:#777;">No pending check-ins right now.</p>
+{% endif %}
+
+<div style="margin-top:20px;">
+<a href="{{ url_for('walkin') }}" class="btn button">New Walk-in</a>
+</div>
+
+{% endblock %}
