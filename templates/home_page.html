@@ -1,1 +1,14 @@
 <!-- Sets role employee or customer -->
+
+{% extends "layout.html" %}
+{% block content %}
+<div style="max-width:400px; margin:60px auto; text-align:center;">
+  <h1>Welcome to the Hotel Management System</h1>
+  <p style="color:#777; margin-bottom:30px;">Select your role to continue</p>
+ 
+  <form method="POST" action="/set-role" style="display:flex; gap:20px; justify-content:center;">
+    <button name="role" value="customer" class="btn button" style="padding:15px 30px; font-size:1em;">I am a Customer</button>
+    <button name="role" value="employee" class="btn button" style="padding:15px 30px; font-size:1em;">I am an Employee </button>
+  </form>
+</div>
+{% endblock %}
