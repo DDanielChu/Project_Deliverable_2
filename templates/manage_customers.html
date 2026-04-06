@@ -16,59 +16,42 @@
     </div>
 
     <div>
-      <div >
-        <label>Street #</label>
-        <input name="street_number" type="number" required value="{{ editing.street_number if editing else '' }}">
-      </div>
-      <div >
-        <label>Street Name</label>
-        <input name="street_name" required value="{{ editing.street_name if editing else '' }}">
-      </div>
-      <div >
-        <label>Apt #</label>
-        <input name="apt_number" value="{{ editing.apt_number if editing and editing.apt_number else '' }}">
-      </div>
-    </div>
-    <div class="form-row">
-      <div >
-        <label>City</label>
-        <input name="city" required value="{{ editing.city if editing else '' }}">
-      </div>
-      <div >
-        <label>Province</label>
-        <input name="province" required value="{{ editing.province if editing else '' }}">
-      </div>
-      <div >
-        <label>ZIP</label>
-        <input name="zip" required value="{{ editing.zip if editing else '' }}">
-      </div>
-    </div>
-    <div class="form-row">
-      <div >
-        <label>ID Type</label>
-        <select name="type_of_id" required>
-          <option value="">Select...</option>
-          {% for opt in ['SSN', 'SIN', 'Driving Licence'] %}
-            <option value="{{ opt }}" {{ 'selected' if editing and editing.type_of_id == opt else '' }}>
-              {{ opt }}
-            </option>
-          {% endfor %}
-        </select>
-      </div>
-      <div >
-        <label>ID Value</label>
-        <input name="id_value" required value="{{ editing.id_value if editing else '' }}">
-      </div>
-      {% if not editing %}
-      <div >
-        <label>Date of Registration</label>
-        <input type="date" name="date_of_registration" required>
-      </div>
-      {% endif %}
+        <div><label>Street #</label><input name="street_number" type="number" required value="{{ editing.street_number if editing else '' }}"></div>
+        <div><label>Street Name</label><input name="street_name" required value="{{ editing.street_name if editing else '' }}"></div>
+        <div><label>Apt #</label><input name="apt_number" value="{{ editing.apt_number if editing and editing.apt_number else '' }}"></div>
     </div>
 
-    <button class="btn">
-      {{ 'Save Changes' if editing else 'Add Customer' }}
+    <div>
+        <div><label>City</label><input name="city" required value="{{ editing.city if editing else '' }}"></div>
+        <div><label>Province</label><input name="province" required value="{{ editing.province if editing else '' }}"></div>
+        <div><label>ZIP</label><input name="zip" required value="{{ editing.zip if editing else '' }}"></div>
+    </div>
+
+    <div>
+        <div>
+        <label>ID Type</label>
+        <select name="type_of_id" required>
+            <option value="">Select...</option>
+            {% for opt in ['SSN', 'SIN', 'Driving Licence'] %}
+            <option value="{{ opt }}" {{ 'selected' if editing and editing.type_of_id == opt else '' }}>
+                {{ opt }}
+            </option>
+            {% endfor %}
+        </select>
+        </div>
+
+        <div>
+            <label>ID Value</label>
+            <input name="id_value" required value="{{ editing.id_value if editing else '' }}">
+        </div>
+        
+        {% if not editing %}
+        <div><label>Date of Registration</label><input type="date" name="date_of_registration" required></div>
+        {% endif %}
+    </div>
+
+    <button">
+        {{ 'Save Changes' if editing else 'Add Customer' }}
     </button>
     {% if editing %}
       <a href="{{ url_for('manage_customers') }}" class="btn btn-secondary" style="margin-left:8px;">
