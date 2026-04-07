@@ -9,21 +9,21 @@ app = Flask(__name__)
 app.secret_key = "batman"
 
 def get_db_connection():
-    # conn = psycopg2.connect(
-    #     dbname="postgres",
-    #     user="postgres",
-    #     password="Database123",
-    #     host="localhost",
-    #     port="5432"
-    # )
-
     conn = psycopg2.connect(
-        dbname="hotel_db",
+        dbname="postgres",
         user="postgres",
-        password="20177Wsbwswn0!",
+        password="Database123",
         host="localhost",
         port="5432"
     )
+
+    # conn = psycopg2.connect(
+    #     dbname="hotel_db",
+    #     user="postgres",
+    #     password="20177Wsbwswn0!",
+    #     host="localhost",
+    #     port="5432"
+    # )
 
     return conn
 
@@ -133,45 +133,6 @@ def home():
     session.clear()
     return render_template("home_page.html")
 
-    # list = get_data_from_database(None, None, None, None, None,  None, None, None)
-
-    # string = ""
-
-    # for x in list:
-    #     string += str(x) +"<br><br>"
-
-    # return string
-
-
-
-
-@app.route("/rooms")
-def room():
-    capacity = request.args.get("capacity")
-    price = request.args.get("price")
-    area = request.args.get("area")
-
-    string = ""
-
-    if capacity:
-        string += f" Capacity Received: {capacity}"
-    else:
-        string += " No Capacity Received"
-
-    if price:
-        string += f" Price Received: {price}"
-    else:
-        string += " No Price Received"
-
-    if area:
-        
-        string += f" Area Received: {area}"
-    else:
-        string += " No Area Received"
-
-    return "Rooms route is working " + string  
-
-
 
 @app.route("/set-role", methods=["POST"])
 def set_role():
@@ -182,7 +143,7 @@ def set_role():
         return redirect(url_for("customer_login"))
 
     else:
-        return render_template("employee_login.html")
+        return redirect(url_for("employee_login"))
 
 
 
@@ -354,10 +315,10 @@ def customer_login():
             return redirect(url_for("view_bookings"))
         
         else:
+            curr.close()
+            conn.close()
             return render_template("customer_login.html")
         
-    curr.close()
-    conn.close()
 
     return render_template("customer_login.html")
 
@@ -368,9 +329,82 @@ def customer_login():
 
 
 
-@app.route("/walkin")
+@app.route("/walkin", methods = ["GET","POST"])
 def walkin():
-    return render_template("process_walkins.html")
+    conn = get_db_connection()
+    curr = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+
+    employee_ssn = session["employee_ssn"]
+
+    curr.execute("""SELECT * FROM public.employee WHERE ssn = %s LIMIT 1""", (employee_ssn,))
+
+    mapOfEmployee = curr.fetchone()
+
+
+    curr.execute(""" SELECT * FROM public.customer""")
+
+    customers = curr.fetchall()
+
+    curr.execute("""SELECT * FROM public.room WHERE hotel_id = %s""", (mapOfEmployee["hotel_id"],))
+
+    rooms = curr.fetchall()
+
+    error = None
+
+    if request.method == "POST":
+
+        customer_id = request.form["customer_id"]
+        room_id = request.form["room_id"]
+        start_date = request.form["start_date"]
+        end_date = request.form["end_date"]
+        payment_method = request.form["payment_method"]
+        
+
+
+
+        if (customer_id and room_id and start_date and end_date and payment_method):
+            
+            
+            start = datetime.strptime(start_date, "%Y-%m-%d")
+            end = datetime.strptime(end_date, "%Y-%m-%d")
+
+            if (start < end):
+                results = get_room_information(start_date, end_date,capacity, city, chain_id, stars, min_rooms, max_price)
+
+                curr.execute("""SELECT * FROM public.room r 
+                            WHERE room_id = %s AND hotel_id = %s LIMIT 1""", (room_id, mapOfEmployee["hotel_id"]))
+
+                room_being_used = curr.fetchone()
+
+                curr.execute("""SELECT 
+                        setval('renting_rent_id_seq', (SELECT MAX(rent_id) 
+                        FROM public.renting));""")
+
+                curr.execute("""INSERT INTO public.renting
+                            (customer_id, hotel_id, room_id, 
+                            employee_ssn, booking_id, start_date, end_date, 
+                            price, payment_method, is_walk_in)
+                            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
+                            (customer_id, mapOfEmployee["hotel_id"], room_id, employee_ssn, None, start_date, end_date, room_being_used["price"], payment_method, True))
+
+                conn.commit()
+                    
+                curr.close()
+                conn.close()
+
+
+                return redirect(url_for("employee_dashboard"))
+
+            else:
+                error = "Put start date before end date"
+
+
+
+    curr.close()
+    conn.close()
+
+
+    return render_template("process_walkins.html", customers = customers, rooms = rooms, error = error)
 
 
 @app.route("/employee_login", methods = ["GET", "POST"])
@@ -379,11 +413,11 @@ def employee_login():
         conn = get_db_connection()
         curr = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
-        employee_ssn = request.form["employee_ssn"]
+        employee_ssn = request.form["ssn"]
 
-        curr.execute(""" SELECT employee_ssn, hotel_id, first_name 
+        curr.execute(""" SELECT ssn, hotel_id, first_name 
                     FROM public.employee
-                    WHERE employee_ssn = %s
+                    WHERE ssn = %s
         """, (employee_ssn,))
 
         existence = curr.fetchone()
@@ -399,10 +433,11 @@ def employee_login():
             return redirect(url_for("employee_dashboard"))
         
         else:
+            
+            curr.close()
+            conn.close()
             return render_template("employee_login.html")
 
-    curr.close()
-    conn.close()
     
     return render_template("employee_login.html")
 

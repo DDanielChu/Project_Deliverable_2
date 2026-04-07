@@ -4,6 +4,11 @@
 {% block content %}
 
 <h1>Walk-in Renting</h1>
+{% if error %}
+  <div style="color:red; margin-bottom:15px;">
+    {{ error }}
+  </div>
+{% endif %}
 <p style="color:#777; margin-bottom:20px;">Process a renting for a customer who arrived without a booking.</p>
 
 <div style="max-width:600px;">
