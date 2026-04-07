@@ -1,1 +1,71 @@
 <!-- shows the customer the two views from 2f -->
+
+{% extends "layout.html" %}
+{% block content %}
+
+<h1>Database Views</h1>
+
+<!-- VIEW 1 -->
+<h2>View 1: Available Rooms Per Area</h2>
+
+<p style="color:#777; font-size:0.9em; margin-bottom:10px;">Number of rooms that are not currently booked or rented, grouped by city and province.</p>
+<table>
+  <thead>
+    <tr>
+        <th>City</th>
+        <th>Province</th>
+        <th>Available Rooms</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% if available %}
+        {% for row in available %}
+        <tr>
+            <td>{{ row.city }}</td>
+            <td>{{ row.province }}</td>
+            <td><strong>{{ row.available_rooms }}</strong></td>
+        </tr>
+        {% endfor %}
+    {% else %}
+        <tr><td colspan="3" style="color:#777;">No data available.</td></tr>
+    {% endif %}
+  </tbody>
+</table>
+
+
+<!-- VIEW 2 -->
+<h2>View 2: Total Room Capacity Per Hotel</h2>
+
+<p style="color:#777; margin-bottom:10px;">The total number of rooms and combined guest capacity for each hotel.</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>Hotel ID</th>
+      <th>City</th>
+      <th>Province</th>
+      <th>Stars</th>
+      <th>Total Rooms</th>
+      <th>Total Capacity (guests)</th>
+    </tr>
+  </thead>
+
+  <tbody>
+    {% if capacity %}
+        {% for row in capacity %}
+        <tr>
+            <td>{{ row.hotel_id }}</td>
+            <td>{{ row.city }}</td>
+            <td>{{ row.province }}</td>
+            <td>{{ '⭐' * row.star_number }}</td>
+            <td>{{ row.total_rooms }}</td>
+            <td><strong>{{ row.total_capacity }}</strong></td>
+        </tr>
+        {% endfor %}
+    {% else %}
+        <tr><td colspan="6" style="color:#777;">No data available.</td></tr>
+    {% endif %}
+  </tbody>
+</table>
+
+{% endblock %}
