@@ -1,1 +1,110 @@
 <!-- Create update delete rooms -->
+
+{% extends "base.html" %}
+{% block content %}
+
+<h1>Manage Rooms</h1>
+
+<!-- Form -->
+<h2>{{ 'Edit Room ' ~ editing.room_id ~ ' (Hotel #' ~ editing.hotel_id ~ ')' if editing else 'Add New Room' }}</h2>
+<div>
+  <form method="POST" action="{{ url_for('edit_room', hid=editing.hotel_id, rid=editing.room_id) if editing else url_for('add_room') }}">
+
+    <div>
+        <div>
+            <label>Hotel</label>
+            <select name="hotel_id" required {{ 'disabled' if editing else '' }}>
+                <option value="">Select hotel...</option>
+                {% for h in hotels %}
+                <option value="{{ h.hotel_id }}" {{ 'selected' if editing and editing.hotel_id == h.hotel_id else '' }}>
+                    Hotel #{{ h.hotel_id }} — {{ h.city }}, {{ h.province }}
+                </option>
+                {% endfor %}
+            </select>
+            {% if editing %}
+                <input type="hidden" name="hotel_id" value="{{ editing.hotel_id }}">
+            {% endif %}
+        </div>
+
+        <div>
+            <label>Room Number</label>
+            <input name="room_id" type="number" required value="{{ editing.room_id if editing else '' }}" {{ 'readonly' if editing else '' }}>
+        </div>
+
+        <div>
+            <label>Price/Night ($)</label>
+            <input name="price" type="number" step="0.01" min="0" required value="{{ editing.price if editing else '' }}">
+        </div>
+    </div>
+
+    <div>
+        <div>
+            <label>Capacity (guests)</label>
+            <input name="capacity_of_room" type="number" min="1" required value="{{ editing.capacity_of_room if editing else '' }}">
+        </div>
+
+        <div>
+            <label>View Type</label>
+            <select name="type_of_view" required>
+                {% for v in ['none', 'sea', 'mountain'] %}
+                <option value="{{ v }}" {{ 'selected' if editing and editing.type_of_view == v else '' }}>
+                    {{ v | capitalize }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div>
+            <label>Bed Extension (inches)</label>
+            <input name="extension_of_bed" type="number" min="0" required value="{{ editing.extension_of_bed if editing else '' }}">
+        </div>
+    </div>
+
+    <button type="submit">
+        {{ 'Save Changes' if editing else 'Add Room' }}
+    </button>
+    {% if editing %}
+        <a href="{{ url_for('manage_rooms') }}" class="btn button" style="margin-left:8px;">Cancel</a>
+    {% endif %}
+  </form>
+</div>
+
+
+<!-- Room info table -->
+<h2>All Rooms</h2>
+
+<table>
+  <thead>
+    <tr>
+        <th>Hotel ID</th><th>Location</th><th>Room #</th><th>Price/Night</th>
+        <th>Capacity</th><th>View</th><th>Bed Ext.</th><th>Actions</th>
+    </tr>
+  </thead>
+
+  <tbody>
+    {% for r in rooms %}
+    <tr>
+        {% if editing and editing.hotel_id == r.hotel_id and editing.room_id == r.room_id %}
+            style="background:#fff8e1;"
+        {% endif %}
+    </tr>
+      <td>{{ r.hotel_id }}</td>
+      <td>{{ r.city }}, {{ r.province }}</td>
+      <td>{{ r.room_id }}</td>
+      <td>${{ "%.2f"|format(r.price) }}</td>
+      <td>{{ r.capacity_of_room }}</td>
+      <td>{{ r.type_of_view }}</td>
+      <td>{{ r.extension_of_bed }}</td>
+      <td style="white-space:nowrap;">
+        <a href="{{ url_for('manage_rooms') }}?edit_hid={{ r.hotel_id }}&edit_rid={{ r.room_id }}"
+           class="btn button" style="padding:4px 10px; font-size:0.8em;">Edit</a>
+        <form method="POST" action="/manage/rooms/delete/{{ r.hotel_id }}/{{ r.room_id }}"
+              style="display:inline;" onsubmit="return confirm('Delete this room?')">
+          <button class="btn button" style="padding:4px 10px; font-size:0.8em;">Delete</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

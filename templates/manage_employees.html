@@ -1,1 +1,95 @@
 <!-- Create, update delete employees -->
+
+{% extends "base.html" %}
+{% block content %}
+
+<h1>Manage Employees</h1>
+
+<!-- Form -->
+<h2>{{ 'Edit Employee: ' ~ editing.ssn if editing else 'Add New Employee' }}</h2>
+<div>
+  <form method="POST" action="{{ url_for('edit_employee', ssn=editing.ssn) if editing else url_for('add_employee') }}">
+
+    <div>
+        <div><label>SSN</label><input name="ssn" required placeholder="123-45-6789" value="{{ editing.ssn if editing else '' }}" {{ 'readonly' if editing else '' }}></div>
+        <div><label>First Name</label><input name="first_name" required value="{{ editing.first_name if editing else '' }}"></div>
+        <div><label>Middle Name</label><input name="middle_name" value="{{ editing.middle_name if editing and editing.middle_name else '' }}"></div>
+        <div><label>Last Name</label><input name="last_name" required value="{{ editing.last_name if editing else '' }}"></div>
+    </div>
+
+    <div>
+        <div><label>Street #</label><input name="street_number" type="number" required value="{{ editing.street_number if editing else '' }}"></div>
+        <div><label>Street Name</label><input name="street_name" required value="{{ editing.street_name if editing else '' }}"></div>
+        <div><label>Apt #</label><input name="apt_number" value="{{ editing.apt_number if editing and editing.apt_number else '' }}"></div>
+    </div>
+
+    <div>
+        <div><label>City</label><input name="city" required value="{{ editing.city if editing else '' }}"></div>
+        <div><label>Province</label><input name="province" required value="{{ editing.province if editing else '' }}"></div>
+        <div><label>ZIP</label><input name="zip" required value="{{ editing.zip if editing else '' }}"></div>
+    </div>
+
+    <div>
+        <div>
+            <label>Hotel</label>
+            <select name="hotel_id" required>
+                <option value="">Select hotel...</option>
+                {% for h in hotels %}
+                <option value="{{ h.hotel_id }}" {{ 'selected' if editing and editing.hotel_id == h.hotel_id else '' }}>
+                    Hotel #{{ h.hotel_id }} — {{ h.city }}, {{ h.province }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div>
+            <label>Role</label>
+            <input name="job_role" required placeholder="e.g. manager, receptionist" value="{{ editing.job_role if editing else '' }}">
+        </div>
+    </div>
+
+    <button type="submit">
+        {{ 'Save Changes' if editing else 'Add Employee' }}
+    </button>
+    {% if editing %}
+        <a href="{{ url_for('manage_employees') }}" class="btn button" style="margin-left:8px;">Cancel</a>
+    {% endif %}
+  </form>
+</div>
+
+
+<!-- Employee info table -->
+<h2>All Employees</h2>
+
+<table>
+  <thead>
+    <tr>
+        <th>SSN</th><th>Name</th><th>Hotel</th><th>Role</th><th>City</th><th>Actions</th>
+    </tr>
+  </thead>
+
+  <tbody>
+    {% for e in employees %}
+    <tr>
+        {% if editing and editing.ssn == e.ssn %}
+            style="background:#fff8e1;"
+        {% endif %}
+    </tr>
+      <td>{{ e.ssn }}</td>
+      <td>{{ e.first_name }} {% if e.middle_name %}{{ e.middle_name }} {% endif %}{{ e.last_name }}</td>
+      <td>Hotel #{{ e.hotel_id }} ({{ e.city }}, {{ e.province }})</td>
+      <td>{{ e.job_role }}</td>
+      <td>{{ e.city }}</td>
+      <td style="white-space:nowrap;">
+        <a href="{{ url_for('manage_employees') }}?edit={{ e.ssn }}"
+           class="btn button" style="padding:4px 10px; font-size:0.8em;">Edit</a>
+        <form method="POST" action="/manage/employees/delete/{{ e.ssn }}"
+              style="display:inline;" onsubmit="return confirm('Delete this employee?')">
+          <button class="btn button" style="padding:4px 10px; font-size:0.8em;">Delete</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}
