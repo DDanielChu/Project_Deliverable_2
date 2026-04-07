@@ -198,7 +198,7 @@ CREATE TABLE IF NOT EXISTS renting (
 
 -- ARCHIVES
 CREATE TABLE IF NOT EXISTS booking_archive (
-    booking_ID      INT             INT,
+    booking_ID      INT,
     customer_ID     INT             NOT NULL,
     hotel_ID        INT             NOT NULL,
     room_ID         INT             NOT NULL,
