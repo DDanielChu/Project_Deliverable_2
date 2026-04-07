@@ -70,11 +70,11 @@
 
   <tbody>
     {% for e in employees %}
-    <tr>
+    <tr
         {% if editing and editing.ssn == e.ssn %}
             style="background:#fff8e1;"
         {% endif %}
-    </tr>
+    >
       <td>{{ e.ssn }}</td>
       <td>{{ e.first_name }} {% if e.middle_name %}{{ e.middle_name }} {% endif %}{{ e.last_name }}</td>
       <td>Hotel #{{ e.hotel_id }} ({{ e.city }}, {{ e.province }})</td>

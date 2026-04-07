@@ -70,11 +70,11 @@
 
   <tbody>
     {% for h in hotels %}
-    <tr>
+    <tr
         {% if editing and editing.hotel_id == h.hotel_id %}
             style="background:#fff8e1;"
         {% endif %}
-    </tr>
+    ></tr>
       <td>{{ h.hotel_id }}</td>
       <td>{{ h.chain_name }}</td>
       <td>{{ h.city }}</td>

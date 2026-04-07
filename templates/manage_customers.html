@@ -73,11 +73,11 @@
 
   <tbody>
     {% for c in customers %}
-    <tr>
+    <tr
         {% if editing and editing.customer_id == c.customer_id %}
             style="background:#fff8e1;"
         {% endif %}
-    </tr>
+    >
       <td>{{ c.customer_id }}</td>
       <td>{{ c.first_name }} {% if c.middle_name %}{{ c.middle_name }} {% endif %}{{ c.last_name }}</td>
       <td>{{ c.city }}</td>

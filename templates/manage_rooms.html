@@ -83,11 +83,11 @@
 
   <tbody>
     {% for r in rooms %}
-    <tr>
+    <tr
         {% if editing and editing.hotel_id == r.hotel_id and editing.room_id == r.room_id %}
             style="background:#fff8e1;"
         {% endif %}
-    </tr>
+    >
       <td>{{ r.hotel_id }}</td>
       <td>{{ r.city }}, {{ r.province }}</td>
       <td>{{ r.room_id }}</td>
