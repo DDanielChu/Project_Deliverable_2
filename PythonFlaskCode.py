@@ -1,5 +1,6 @@
 from flask import Flask, redirect, url_for, request, render_template, session
 import psycopg2
+import psycopg2.extras
 
 
 app = Flask(__name__)
@@ -187,8 +188,27 @@ def views():
     return render_template("views.html")
 
 
-@app.route("/customer_login")
+@app.route("/customer_login", methods = ["GET", "POST"])
 def customer_login():
+    if request.method == "POST":
+        conn = get_db_connection()
+        curr = conn.cursor()
+
+        customer_id = request.form["customer_id"]
+
+        curr.execute(""" SELECT * FROM public.customer
+                        WHERE customer_id = %s
+        """, (customer_id,))
+
+        existence = curr.fetchall()
+
+        if existence:
+            session["customer_id"] = customer_id
+            return redirect(url_for("view_bookings"))
+        
+        else:
+            return render_template("customer_login.html")
+
     return render_template("customer_login.html")
 
 
@@ -201,9 +221,162 @@ def walkin():
 def employee_dashboard():
     return render_template("employee_dashboard.html")
 
+
+#EVERYTHING STARTING FROM HERE IS RELATED TO THE MANAGING OF CUSTOMERS
+
 @app.route("/manage_customers")
 def manage_customers():
-    return render_template("manage_customers.html")
+    conn = get_db_connection()
+    cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+
+
+    cur.execute("SELECT c.customer_id, " \
+    " c.first_name," \
+    " c.city, " \
+    " c.province, " \
+    " c.type_of_id, " \
+    " c.id_value, " \
+    " c.date_of_registration "
+    " FROM public.customer c "
+    "ORDER BY c.customer_id""")
+
+    customers = cur.fetchall()
+
+    edit_id = request.args.get("edit")
+    editing = None
+
+    if edit_id:
+        cur.execute("""
+            SELECT customer_id, first_name, middle_name, last_name,
+                   street_number, street_name, apt_number,
+                   city, province, zip,
+                   type_of_id, id_value, date_of_registration
+            FROM public.customer
+            WHERE customer_id = %s
+        """, (edit_id,))
+        editing = cur.fetchone()
+
+
+    cur.close()
+    conn.close()
+
+    return render_template("manage_customers.html", customers = customers, editing = editing)
+        
+
+
+@app.route("/manage/customers/delete/<int:cid>", methods = ["POST"])
+def delete_customers(cid):
+    conn = get_db_connection()
+    curr = conn.cursor()
+
+    curr.execute(""" DELETE FROM 
+                 public.customer c
+                 WHERE c.customer_id = %s
+
+    """, (cid,))
+
+    conn.commit()
+    curr.close()
+    conn.close()
+
+    return redirect(url_for("manage_customers"))
+
+
+@app.route("/add_customer", methods = ["POST"])
+def add_customer():
+    first_name = request.form["first_name"]
+    middle_name = request.form["middle_name"]
+    last_name = request.form["last_name"]
+
+    street_number = request.form["street_number"]
+    street_name = request.form["street_name"]
+    apt_number = request.form["apt_number"]
+
+    city = request.form["city"]
+    province = request.form["province"]
+    zip = request.form["zip"]
+
+    type_of_id = request.form["type_of_id"]
+    id_value = request.form["id_value"]
+    date_of_registration = request.form["date_of_registration"]
+
+
+    conn = get_db_connection()
+    curr = conn.cursor()
+
+    curr.execute("""SELECT 
+                 setval('customer_customer_id_seq', (SELECT MAX(customer_id) 
+                 FROM public.customer));""")
+
+    curr.execute("""
+        INSERT INTO public.customer (
+            first_name, middle_name, last_name,
+            street_number, street_name, apt_number,
+            city, province, zip,
+            type_of_id, id_value, date_of_registration
+        )
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+    """, (
+        first_name, middle_name, last_name,
+        street_number, street_name, apt_number if apt_number else None,
+        city, province, zip,
+        type_of_id, id_value, date_of_registration
+    ))
+
+    conn.commit()
+    curr.close()
+    conn.close()
+
+
+    return redirect(url_for("manage_customers"))
+
+
+@app.route("/edit_customer/<int:cid>", methods = ["POST"])
+def edit_customer(cid):
+    first_name = request.form["first_name"]
+    middle_name = request.form["middle_name"]
+    last_name = request.form["last_name"]
+
+    street_number = request.form["street_number"]
+    street_name = request.form["street_name"]
+    apt_number = request.form["apt_number"]
+
+    city = request.form["city"]
+    province = request.form["province"]
+    zip = request.form["zip"]
+
+    type_of_id = request.form["type_of_id"]
+    id_value = request.form["id_value"]
+
+    conn = get_db_connection()
+    curr = conn.cursor()
+
+    curr.execute("""UPDATE public.customer 
+                SET first_name = %s,
+                middle_name = %s,
+                last_name = %s,
+                street_number = %s,
+                street_name = %s,
+                apt_number = %s,
+                city = %s,
+                province = %s,
+                zip = %s,
+                type_of_id = %s,
+                id_value = %s
+                WHERE customer_id = %s
+                 """, (        first_name, middle_name if middle_name else None, last_name,
+        street_number, street_name, apt_number if apt_number else None,
+        city, province, zip, type_of_id, id_value, cid))
+    
+    conn.commit()
+
+    curr.close()
+    conn.close()
+
+    return redirect(url_for("manage_customers"))
+
+
+
 
 
 @app.route("/manage_employees")
@@ -219,6 +392,7 @@ def manage_hotels():
 @app.route("/manage_rooms")
 def manage_rooms():
     return render_template("manage_rooms.html")
+
 
 
 if __name__ == "__main__":

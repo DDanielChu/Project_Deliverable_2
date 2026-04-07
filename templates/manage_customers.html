@@ -1,6 +1,6 @@
 <!-- Create, update, delete customers -->
 
-{% extends "base.html" %}
+{% extends "layout.html" %}
 {% block content %}
 
 <h1>Manage Customers</h1>
@@ -32,7 +32,7 @@
         <label>ID Type</label>
         <select name="type_of_id" required>
             <option value="">Select...</option>
-            {% for opt in ['SSN', 'SIN', 'Driving Licence'] %}
+            {% for opt in ['SSN', 'SIN', 'DRIVING LSCENCE'] %}
             <option value="{{ opt }}" {{ 'selected' if editing and editing.type_of_id == opt else '' }}>
                 {{ opt }}
             </option>
