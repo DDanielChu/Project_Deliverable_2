@@ -9,6 +9,7 @@ app = Flask(__name__)
 app.secret_key = "batman"
 
 def get_db_connection():
+    
     conn = psycopg2.connect(
         dbname="postgres",
         user="postgres",
@@ -124,45 +125,6 @@ def get_room_information(start_date, end_date, room_capacity, area, hotel_chain,
 def home():
     session.clear()
     return render_template("home_page.html")
-
-    # list = get_data_from_database(None, None, None, None, None,  None, None, None)
-
-    # string = ""
-
-    # for x in list:
-    #     string += str(x) +"<br><br>"
-
-    # return string
-
-
-
-
-@app.route("/rooms")
-def room():
-    capacity = request.args.get("capacity")
-    price = request.args.get("price")
-    area = request.args.get("area")
-
-    string = ""
-
-    if capacity:
-        string += f" Capacity Received: {capacity}"
-    else:
-        string += " No Capacity Received"
-
-    if price:
-        string += f" Price Received: {price}"
-    else:
-        string += " No Price Received"
-
-    if area:
-        
-        string += f" Area Received: {area}"
-    else:
-        string += " No Area Received"
-
-    return "Rooms route is working " + string  
-
 
 
 @app.route("/set-role", methods=["POST"])
@@ -353,9 +315,58 @@ def customer_login():
 
 
 
-@app.route("/walkin")
+@app.route("/walkin", methods = ["POST"])
 def walkin():
-    return render_template("process_walkins.html")
+    conn = get_db_connection()
+    curr = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+
+    customer_id = request.form["customer_id"]
+    room_id = request.form["room_id"]
+    start_date = request.form["start_date"]
+    end_date = request.form["end_date"]
+    payment_method = request.form["payment_method"]
+    
+    employee_ssn = session["employee_ssn"]
+
+
+
+    curr.execute(""" SELECT * FROM public.customer""")
+
+    customers = curr.fetchall()
+
+    curr.execute("""SELECT * FROM public.room""")
+
+    rooms = curr.fetchall()
+
+    if (customer_id and room_id and start_date and end_date and payment_method):
+        curr.execute("""SELECT * FROM public.employee WHERE employee_ssn = %s LIMIT 1""", (employee_ssn,))
+
+        mapOfEmployee = curr.fetchone()
+
+        curr.execute("""SELECT * FROM public.room r 
+                    WHERE room_id = %s AND hotel_id = %s LIMIT 1""", (room_id, mapOfEmployee["hotel_id"]))
+
+        room_being_used = curr.fetchone()
+
+        curr.execute("""SELECT 
+                 setval('renting_rent_id_seq', (SELECT MAX(rent_id) 
+                 FROM public.renting));""")
+
+        curr.execute("""INSERT INTO public.renting
+                     (customer_id, hotel_id, room_id, 
+                     employee_ssn, booking_id, start_date, end_date
+                     price, payment_method, is_walk_in)
+                     VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
+                    (customer_id, mapOfEmployee["hotel_id"], room_id, employee_ssn, None, start_date, end_date, room_being_used["price"], payment_method, True))
+
+        conn.commit()
+
+
+    curr.close()
+    conn.close()
+
+
+    return render_template("process_walkins.html", customers = customers, rooms = rooms)
 
 
 @app.route("/employee_dashboard")
