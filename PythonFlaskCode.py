@@ -9,11 +9,18 @@ app = Flask(__name__)
 app.secret_key = "batman"
 
 def get_db_connection():
-    
+    # conn = psycopg2.connect(
+    #     dbname="postgres",
+    #     user="postgres",
+    #     password="Database123",
+    #     host="localhost",
+    #     port="5432"
+    # )
+
     conn = psycopg2.connect(
-        dbname="postgres",
+        dbname="hotel_db",
         user="postgres",
-        password="Database123",
+        password="20177Wsbwswn0!",
         host="localhost",
         port="5432"
     )
@@ -301,10 +308,17 @@ def customer_login():
 
         if existence:
             session["customer_id"] = customer_id
+
+            curr.close()
+            conn.close()
+
             return redirect(url_for("view_bookings"))
         
         else:
             return render_template("customer_login.html")
+        
+    curr.close()
+    conn.close()
 
     return render_template("customer_login.html")
 
@@ -369,8 +383,48 @@ def walkin():
     return render_template("process_walkins.html", customers = customers, rooms = rooms)
 
 
+@app.route("/employee_login", methods = ["GET", "POST"])
+def employee_login():
+    if request.method == "POST":
+        conn = get_db_connection()
+        curr = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+
+        employee_ssn = request.form["employee_ssn"]
+
+        curr.execute(""" SELECT employee_ssn, hotel_id, first_name 
+                    FROM public.employee
+                    WHERE employee_ssn = %s
+        """, (employee_ssn,))
+
+        existence = curr.fetchone()
+
+        if existence:
+            session["employee_ssn"] = employee_ssn
+            session["hotel_id"] = existence["hotel_id"]
+            session["first_name"] = existence["first_name"]
+
+            curr.close()
+            conn.close()
+
+            return redirect(url_for("employee_dashboard"))
+        
+        else:
+            return render_template("employee_login.html")
+
+    curr.close()
+    conn.close()
+    
+    return render_template("employee_login.html")
+
+
+
 @app.route("/employee_dashboard")
 def employee_dashboard():
+
+
+
+
+
     return render_template("employee_dashboard.html")
 
 
