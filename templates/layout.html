@@ -64,18 +64,18 @@ nav a:active {
 <body>
     <nav>
         <Strong>Hotel Management</Strong>
-        {% if session.role == 'customer' %}
-            <a href="{{url_for('search')}}" >Search Available Rooms</a>
-            <a href="{{url_for('view_bookings')}}">View Bookings</a>
+        {% if session.role == 'customer' and session.customer_id %}
+            <a href="{{url_for('search')}}" > | Search Available Rooms |</a>
+            <a href="{{url_for('view_bookings')}}"> View Bookings |</a>
             <a href="{{url_for('views')}}">View room</a>
         {% elif session.role == 'employee' %}
-             <a href="{{ url_for('employee_dashboard') }}">Dashboard</a>
-            <a href="{{ url_for('search') }}">Search Rooms</a>
-            <a href="{{ url_for('walkin') }}">Walk-in Renting</a>
-            <a href="{{ url_for('manage_customers') }}">Customers</a>
-            <a href="{{ url_for('manage_employees') }}">Employees</a>
-            <a href="{{ url_for('manage_hotels') }}">Hotels</a>
-            <a href="{{ url_for('manage_rooms') }}">Rooms</a>
+             <a href="{{ url_for('employee_dashboard') }}"> | Dashboard |</a>
+            <a href="{{ url_for('search') }}"> Search Rooms | </a>
+            <a href="{{ url_for('walkin') }}">Walk-in Renting | </a>
+            <a href="{{ url_for('manage_customers') }}">Customers | </a>
+            <a href="{{ url_for('manage_employees') }}">Employees | </a>
+            <a href="{{ url_for('manage_hotels') }}">Hotels | </a>
+            <a href="{{ url_for('manage_rooms') }}">Rooms | </a>
             <a href="{{ url_for('views') }}">Views</a>
         {% endif %}
         <div>

@@ -4,7 +4,11 @@
 {% block content %}
 
 <h1>View Available Rooms</h1>
-
+{% if error %}
+  <div style="color:red; margin-bottom:15px;">
+    {{ error }}
+  </div>
+{% endif %}
 <!-- Filters -->
 <div class="container">
   <form method="GET" action="/search" id="searchForm">
@@ -91,7 +95,7 @@
         <p>Capacity: {{ r.capacity_of_room }} guests</p>
         <p>View: {{ r.type_of_view | capitalize }}</p>
         <p>Bed extension: {{ r.extension_of_bed }}</p>
-        <p>Total rooms in hotel: {{ r.total_rooms_in_hotel }}</p>
+        <p>Total available rooms in hotel: {{ r.total_rooms_in_hotel }}</p>
         <div class="price">${{ "%.2f"|format(r.price) }} / night</div>
  
         {% if session.role == 'customer' and session.get('customer_id') %}

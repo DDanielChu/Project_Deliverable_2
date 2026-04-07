@@ -1,6 +1,8 @@
 from flask import Flask, redirect, url_for, request, render_template, session
 import psycopg2
 import psycopg2.extras
+from datetime import datetime
+
 
 
 app = Flask(__name__)
@@ -20,9 +22,9 @@ def get_db_connection():
     
 
 
-def get_data_from_database(start_date, end_date, room_capacity, area, hotel_chain, stars, totalRooms, price):
+def get_room_information(start_date, end_date, room_capacity, area, hotel_chain, stars, totalRooms, price):
     conn = get_db_connection()
-    cur = conn.cursor()
+    cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
     query = """
         SELECT
@@ -35,7 +37,9 @@ def get_data_from_database(start_date, end_date, room_capacity, area, hotel_chai
             r.room_id,
             r.capacity_of_room,
             r.price,
-            count(r.room_id) OVER (PARTITION BY h.hotel_id) AS total_rooms
+            r.type_of_view,
+            r.extension_of_bed,
+            count(r.room_id) OVER (PARTITION BY h.hotel_id) AS total_rooms_in_hotel
         FROM public.hotel_chain hc
         JOIN public.hotel h
             ON hc.chain_id = h.chain_id
@@ -55,7 +59,7 @@ def get_data_from_database(start_date, end_date, room_capacity, area, hotel_chai
         parameters.append(area)
 
     if hotel_chain is not None and hotel_chain != "":
-        conditions.append("hc.hotel_name = %s")
+        conditions.append("hc.chain_id = %s")
         parameters.append(hotel_chain)
 
     if stars is not None and stars != "":
@@ -63,7 +67,7 @@ def get_data_from_database(start_date, end_date, room_capacity, area, hotel_chai
         parameters.append(stars)
 
     if totalRooms is not None and totalRooms != "":
-        conditions.append("total_rooms > %s")
+        conditions.append("total_rooms_in_hotel > %s")
         parameters.append(totalRooms)
 
     if price is not None and price != "":
@@ -173,19 +177,150 @@ def set_role():
         return render_template("employee_login.html")
 
 
-@app.route("/search")
+
+
+#THESE ARE FOR THE CUSTOMERS
+
+@app.route("/search", methods = ["GET"])
 def search():
-    return render_template("search.html")
+    start_date = request.args.get("start_date")
+    end_date = request.args.get("end_date")
+    capacity = request.args.get("capacity")
+    max_price = request.args.get("max_price")
+    city = request.args.get("city")
+    chain_id = request.args.get("chain_id")
+    stars = request.args.get("stars")
+    min_rooms = request.args.get("min_rooms")
+
+
+    conn = get_db_connection()
+    curr = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+
+    curr.execute("""SELECT h.city, h.province FROM public.hotel h ORDER BY h.city, h.province""")
+    cities = curr.fetchall()
+
+    curr.execute("""SELECT ch.chain_id, ch.hotel_name FROM public.hotel_chain ch ORDER BY ch.chain_id""")
+    chains = curr.fetchall()
+
+    results = []
+    error = None
+
+    if (start_date and end_date):
+        start = datetime.strptime(start_date, "%Y-%m-%d")
+        end = datetime.strptime(end_date, "%Y-%m-%d")
+
+        if (start < end):
+           results = get_room_information(start_date, end_date,capacity, city, chain_id, stars, min_rooms, max_price)
+        else:
+            error = "Put start date before end date"
+
+    return render_template("search.html", 
+                       cities = cities,
+                       chains = chains,
+                        rooms = results,
+                        start_date=start_date,
+                        end_date=end_date,
+                        capacity=capacity,
+                        max_price=max_price,
+                        city=city,
+                        chain_id=chain_id,
+                        stars=stars,
+                        min_rooms=min_rooms,
+                        error = error
+                       )
 
 
 @app.route("/view_bookings")
 def view_bookings():
-    return render_template("view_bookings.html")
+    customer_id = session["customer_id"]
 
+    conn = get_db_connection()
+    curr = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+
+    curr.execute(""" SELECT
+                 b.booking_id,
+                 h.city,
+                 h.province,
+                 b.hotel_id,
+                 h.star_number,
+                 b.room_id,
+                 b.start_date,
+                 b.end_date,
+                 r.price,
+                 r.type_of_view,
+                 b.status
+                 FROM public.booking b
+                 JOIN public.room r ON r.room_id = b.room_id AND r.hotel_id = b.hotel_id
+                 JOIN public.hotel h ON h.hotel_id = b.hotel_id
+                 WHERE b.customer_id = %s           
+    """, (customer_id,))
+
+    bookings = curr.fetchall()
+
+    curr.close()
+    conn.close()
+
+    return render_template("view_bookings.html", bookings = bookings)
+
+
+@app.route("/cancel-booking/<int:bid>", methods = ["POST"])
+def cancel_booking(bid):
+    conn = get_db_connection()
+    curr = conn.cursor()
+
+    curr.execute("DELETE FROM public.booking WHERE booking_id = %s", (bid,))
+
+    conn.commit()
+
+    curr.close()
+    conn.close()
+
+    return redirect(url_for("view_bookings"))
 
 @app.route("/views")
 def views():
-    return render_template("views.html")
+    conn = get_db_connection()
+    curr = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+
+    curr.execute(""" SELECT * FROM available_rooms_per_area""")
+
+    available = curr.fetchall()
+
+    curr.execute(""" SELECT * FROM hotel_total_capacity""")
+
+    capacity = curr.fetchall()
+
+    return render_template("views.html", available = available, capacity = capacity)
+
+
+@app.route("/book", methods = ["POST"])
+def book():
+    conn  = get_db_connection()
+    curr = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+
+    customer_id = session["customer_id"]
+
+    hotel_id = request.form["hotel_id"]
+    room_id = request.form["room_id"]
+    start_date = request.form["start_date"]
+    end_date = request.form["end_date"]
+    
+    curr.execute("""SELECT 
+                setval('booking_booking_id_seq', (SELECT MAX(booking_id) 
+                FROM public.booking));""")
+
+    curr.execute(""" INSERT INTO public.booking 
+                 (customer_id, hotel_id, room_id, start_date, end_date, status)
+                VALUES (%s,%s,%s,%s,%s,%s)
+        """, (customer_id, hotel_id, room_id, start_date, end_date, 'PENDING'))
+
+    conn.commit()
+    
+    curr.close()
+    conn.close()
+
+    return redirect(url_for("view_bookings"))
+    
 
 
 @app.route("/customer_login", methods = ["GET", "POST"])
@@ -210,6 +345,12 @@ def customer_login():
             return render_template("customer_login.html")
 
     return render_template("customer_login.html")
+
+
+
+
+#NO LONGER FOR CUSTOMER 
+
 
 
 @app.route("/walkin")
