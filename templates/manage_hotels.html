@@ -20,6 +20,8 @@
         <div><label>City</label><input name="city" required value="{{ editing.city if editing else '' }}"></div>
         <div><label>Province</label><input name="province" required value="{{ editing.province if editing else '' }}"></div>
         <div><label>ZIP</label><input name="zip" required value="{{ editing.zip if editing else '' }}"></div>
+        <div><label>Manager SSN</label><input name="manager_ssn" required value="{{ editing.manager_ssn if editing else '' }}"></div>
+
     </div>
 
     <div>
@@ -76,7 +78,7 @@
         {% endif %}
     ></tr>
       <td>{{ h.hotel_id }}</td>
-      <td>{{ h.chain_name }}</td>
+      <td>{{ h.chain_id }}</td>
       <td>{{ h.city }}</td>
       <td>{{ h.province }}</td>
       <td>{{ '⭐' * h.star_number }}</td>
