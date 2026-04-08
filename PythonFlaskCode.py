@@ -484,7 +484,7 @@ def employee_login():
 
 @app.route("/employee_dashboard")
 def employee_dashboard():
-    
+
     conn = get_db_connection()
     curr = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
@@ -510,9 +510,40 @@ def employee_dashboard():
 
 @app.route("/employee/checkin/<int:bid>", methods=["POST"])
 def checkin(bid):
+    payment_method = request.form["payment_method"]
+    employee_ssn = session["employee_ssn"]
 
+    conn = get_db_connection()
+    curr = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
+    curr.execute("""
+        SELECT * FROM public.booking WHERE booking_id = %s
+    """, (bid,))
+    booking = curr.fetchone()
 
+    curr.execute("""
+        DELETE FROM public.booking WHERE booking_id = %s
+    """, (bid,))
+
+    curr.execute("""
+        SELECT setval('renting_rent_id_seq', (SELECT MAX(rent_id) FROM public.renting))
+    """)
+
+    curr.execute("""
+        INSERT INTO public.renting
+            (customer_id, hotel_id, room_id, employee_ssn, booking_id,
+             start_date, end_date, price, payment_method, is_walk_in)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, FALSE)
+    """, (
+        booking["customer_id"], booking["hotel_id"], booking["room_id"],
+        employee_ssn, bid,
+        booking["start_date"], booking["end_date"],
+        booking["price"], payment_method
+    ))
+
+    conn.commit()
+    curr.close()
+    conn.close()
 
     return redirect(url_for("employee_dashboard"))
 
