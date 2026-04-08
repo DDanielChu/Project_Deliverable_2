@@ -181,7 +181,7 @@ CREATE TABLE IF NOT EXISTS renting (
         REFERENCES employee(ssn),
 
     FOREIGN KEY (booking_id) 
-        REFERENCES booking(booking_id),
+        REFERENCES booking_archive(booking_id),
 
     CHECK (start_date < end_date),
     CHECK (price > 0),
