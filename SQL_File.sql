@@ -465,7 +465,73 @@ CREATE TRIGGER trg_archive_renting
 BEFORE DELETE ON renting
 FOR EACH ROW EXECUTE FUNCTION archive_renting();
 
+-- =========================================================
+-- DATABASE QUERIES
+-- 4 queries total
+-- Includes:
+-- 1) at least 1 aggregation query
+-- 2) at least 1 nested query
+-- =========================================================
 
+SET search_path TO public;
+
+-- =========================================================
+-- QUERY 1: Aggregation
+-- Average room price and number of rooms for each hotel
+-- =========================================================
+SELECT
+    hotel_id,
+    COUNT(*) AS number_of_rooms,
+    AVG(price) AS average_room_price
+FROM room
+GROUP BY hotel_id
+ORDER BY hotel_id;
+
+
+-- =========================================================
+-- QUERY 2: Nested query
+-- Hotels whose average room price is above the overall average
+-- =========================================================
+SELECT
+    r.hotel_id,
+    AVG(r.price) AS hotel_average_price
+FROM room r
+GROUP BY r.hotel_id
+HAVING AVG(r.price) > (
+    SELECT AVG(price)
+    FROM room
+)
+ORDER BY r.hotel_id;
+
+
+-- =========================================================
+-- QUERY 3: Join query
+-- List all customers who have made at least one booking
+-- =========================================================
+SELECT DISTINCT
+    c.customer_id,
+    c.first_name,
+    c.last_name
+FROM customer c
+JOIN booking b
+    ON c.customer_id = b.customer_id
+ORDER BY c.customer_id;
+
+
+-- =========================================================
+-- QUERY 4: Aggregation with join
+-- Total capacity of rooms for each hotel
+-- =========================================================
+SELECT
+    h.hotel_id,
+    h.city,
+    h.province,
+    SUM(r.capacity_of_room) AS total_capacity
+FROM hotel h
+JOIN room r
+    ON h.hotel_id = r.hotel_id
+GROUP BY h.hotel_id, h.city, h.province
+ORDER BY h.hotel_id;
 
 -- INDEXES
 
