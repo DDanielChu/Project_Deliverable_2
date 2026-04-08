@@ -206,35 +206,29 @@ CREATE TABLE IF NOT EXISTS booking_archive (
     end_date        DATE            NOT NULL,
     status          VARCHAR(20)     NOT NULL
                         CHECK (status IN ('PENDING', 'CONFIRMED', 'CANCELLED', 'COMPLETED')),
-    archived_at     TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP
+    archived_at     TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
 	archive_id      SERIAL          PRIMARY KEY
 );
-
-ALTER TABLE booking_archive DROP CONSTRAINT booking_archive_pkey;
-ALTER TABLE booking_archive ADD COLUMN archive_id SERIAL PRIMARY KEY;
 
 
 
 CREATE TABLE IF NOT EXISTS renting_archive (
-    rent_id INT NOT NULL,
-    customer_id INT NOT NULL,
-    hotel_id INT NOT NULL, 
-    room_id INT NOT NULL,
-    employee_ssn VARCHAR(11) NOT NULL,
-    booking_id INT,
-    start_date DATE NOT NULL,
-    end_date DATE NOT NULL,
-    price DECIMAL(10,2) NOT NULL,
-    payment_method VARCHAR(255) NOT NULL,
-    is_walk_in BOOL NOT NULL,
-
-    archived_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-
-    PRIMARY KEY (rent_id),
-
+    rent_id        INT           NOT NULL,
+    customer_id    INT           NOT NULL,
+    hotel_id       INT           NOT NULL,
+    room_id        INT           NOT NULL,
+    employee_ssn   VARCHAR(11)   NOT NULL,
+    booking_id     INT,
+    start_date     DATE          NOT NULL,
+    end_date       DATE          NOT NULL,
+    price          DECIMAL(10,2) NOT NULL
+                       CHECK (price > 0),
+    payment_method VARCHAR(255)  NOT NULL
+                       CHECK (payment_method IN ('CREDIT CARD', 'DEBIT CARD', 'CASH')),
+    is_walk_in     BOOL          NOT NULL,
+    archived_at    TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CHECK (start_date < end_date),
-    CHECK (price > 0),
-    CHECK (payment_method IN ('CREDIT CARD', 'DEBIT CARD', 'CASH'))
+	archive_id     SERIAL        PRIMARY KEY
 );
 
 
@@ -331,29 +325,25 @@ GROUP BY
 CREATE OR REPLACE FUNCTION check_hotel_manager()
 RETURNS TRIGGER AS $$
 BEGIN
-    IF NEW.manager_ssn IS NOT NULL THEN
-        IF NOT EXISTS (
-            SELECT 1
-            FROM employee e
-            WHERE e.ssn = NEW.manager_ssn
-              AND e.hotel_id = NEW.hotel_id
-              AND e.job_role = 'manager'
-        ) THEN
-            RAISE EXCEPTION 'Manager must work at the hotel they manage and must have job_role = manager';
-        END IF;
+    IF NEW.manager_ssn IS NULL THEN
+        RETURN NEW;
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1
+        FROM public.employee e
+        WHERE e.ssn = NEW.manager_ssn
+          AND e.hotel_id = NEW.hotel_id
+          AND LOWER(e.job_role) = 'manager'
+    ) THEN
+        RAISE EXCEPTION 'Manager must work at the hotel they manage and must have job_role = manager';
     END IF;
 
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
 
-CREATE TRIGGER trg_check_hotel_manager
-BEFORE INSERT OR UPDATE ON hotel
-FOR EACH ROW
-EXECUTE FUNCTION check_hotel_manager();
 
-
- 
  
 -- Trigger 2: No overlapping BOOKINGS for the same room
 CREATE OR REPLACE FUNCTION check_no_overlapping_bookings()
@@ -503,36 +493,6 @@ CREATE INDEX idx_renting_availability
 CREATE INDEX idx_booking_customer
     ON booking (customer_id);
 
-
-CREATE VIEW available_rooms_per_area AS
-SELECT
-    h.city,
-    h.province,
-    COUNT(*) AS available_rooms
-FROM room r
-JOIN hotel h ON r.hotel_id = h.hotel_id
-WHERE
-    -- No active booking overlapping today
-    NOT EXISTS (
-        SELECT 1
-        FROM booking b
-        WHERE b.hotel_id   = r.hotel_id
-          AND b.room_id    = r.room_id
-          AND b.status     IN ('PENDING', 'CONFIRMED')
-          AND CURRENT_DATE >= b.start_date
-          AND CURRENT_DATE <  b.end_date
-    )
-    AND
-    -- No active renting overlapping today
-    NOT EXISTS (
-        SELECT 1
-        FROM renting rt
-        WHERE rt.hotel_id  = r.hotel_id
-          AND rt.room_id   = r.room_id
-          AND CURRENT_DATE >= rt.start_date
-          AND CURRENT_DATE <  rt.end_date
-    )
-GROUP BY h.city, h.province;
 
 
 
