@@ -1,6 +1,6 @@
 <!-- Create update delete rooms -->
 
-{% extends "b.layout" %}
+{% extends "layout.html" %}
 {% block content %}
 
 <h1>Manage Rooms</h1>
@@ -46,9 +46,9 @@
         <div>
             <label>View Type</label>
             <select name="type_of_view" required>
-                {% for v in ['none', 'sea', 'mountain'] %}
+                {% for v in ['None', 'SEA', 'MOUNTAIN'] %}
                 <option value="{{ v }}" {{ 'selected' if editing and editing.type_of_view == v else '' }}>
-                    {{ v | capitalize }}
+                    {{ v }}
                 </option>
                 {% endfor %}
             </select>

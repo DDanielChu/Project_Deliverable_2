@@ -523,6 +523,11 @@ def checkin(bid):
     booking = curr.fetchone()
 
     curr.execute("""
+    SELECT * FROM public.room WHERE room_id = %s AND hotel_id = %s""", (booking["room_id"], booking["hotel_id"]))
+
+    room = curr.fetchone()
+
+    curr.execute("""
         DELETE FROM public.booking WHERE booking_id = %s
     """, (bid,))
 
@@ -539,7 +544,7 @@ def checkin(bid):
         booking["customer_id"], booking["hotel_id"], booking["room_id"],
         employee_ssn, bid,
         booking["start_date"], booking["end_date"],
-        booking["price"], payment_method
+        room["price"], payment_method
     ))
 
 
