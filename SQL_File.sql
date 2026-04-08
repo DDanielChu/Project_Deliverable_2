@@ -180,9 +180,6 @@ CREATE TABLE IF NOT EXISTS renting (
     FOREIGN KEY (employee_ssn) 
         REFERENCES employee(ssn),
 
-    FOREIGN KEY (booking_id) 
-        REFERENCES booking_archive(booking_id),
-
     CHECK (start_date < end_date),
     CHECK (price > 0),
     CHECK (payment_method IN ('CREDIT CARD', 'DEBIT CARD', 'CASH')),
