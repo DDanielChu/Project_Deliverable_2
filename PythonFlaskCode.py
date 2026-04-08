@@ -607,18 +607,348 @@ def edit_customer(cid):
     return redirect(url_for("manage_customers"))
 
 
-
-
+#-------------------
+#COPIED FROM PREVIOUS CODE
 
 @app.route("/manage_employees")
 def manage_employees():
-    return render_template("manage_employees.html")
+    conn = get_db_connection()
+    cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
 
+    cur.execute("""SELECT * FROM public.employee WHERE hotel_id = %s""", (session["hotel_id"],))
+
+    employees = cur.fetchall()
+
+    cur.execute("""SELECT * FROM public.hotel WHERE hotel_id = %s""", (session["hotel_id"], ))
+
+    hotels = cur.fetchall()
+
+    edit_id = request.args.get("edit")
+    editing = None
+
+    if edit_id:
+        cur.execute("""
+            SELECT *
+            FROM public.employee
+            WHERE ssn = %s
+        """, (edit_id,))
+        editing = cur.fetchone()
+
+
+    cur.close()
+    conn.close()
+
+    return render_template("manage_employees.html", employees = employees, editing = editing, hotels = hotels)
+        
+
+
+@app.route("/manage/employees/delete/<string:ssn>", methods = ["POST"])
+def delete_employees(ssn):
+    conn = get_db_connection()
+    curr = conn.cursor()
+
+    curr.execute(""" DELETE FROM 
+                 public.employee 
+                 WHERE ssn = %s
+
+    """, (ssn,))
+
+    conn.commit()
+    curr.close()
+    conn.close()
+
+    return redirect(url_for("manage_employees"))
+
+
+@app.route("/add_employee", methods = ["POST"])
+def add_employee():
+    ssn = request.form["ssn"]
+    hotel_id = request.form["hotel_id"]
+
+    first_name = request.form["first_name"]
+    middle_name = request.form["middle_name"]
+    last_name = request.form["last_name"]
+
+    street_number = request.form["street_number"]
+    street_name = request.form["street_name"]
+    apt_number = request.form["apt_number"]
+
+    city = request.form["city"]
+    province = request.form["province"]
+    zip = request.form["zip"]
+
+    job_role = request.form["job_role"]
+
+    conn = get_db_connection()
+    curr = conn.cursor()
+
+
+    curr.execute("""
+        INSERT INTO public.employee (
+            ssn, hotel_id, first_name, middle_name, last_name,
+            street_number, street_name, apt_number,
+            city, province, zip, job_role
+        )
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+    """, (
+        ssn, hotel_id, first_name, middle_name, last_name,
+        street_number, street_name, apt_number if apt_number else None,
+        city, province, zip, job_role
+    ))
+
+    conn.commit()
+    curr.close()
+    conn.close()
+
+
+    return redirect(url_for("manage_employees"))
+
+
+@app.route("/edit_employee/<string:ssn>", methods = ["POST"])
+def edit_employee(ssn):
+    hotel_id = request.form["hotel_id"]
+
+    first_name = request.form["first_name"]
+    middle_name = request.form["middle_name"]
+    last_name = request.form["last_name"]
+
+    street_number = request.form["street_number"]
+    street_name = request.form["street_name"]
+    apt_number = request.form["apt_number"]
+
+    city = request.form["city"]
+    province = request.form["province"]
+    zip = request.form["zip"]
+
+    job_role = request.form["job_role"]
+
+    conn = get_db_connection()
+    curr = conn.cursor()
+
+    curr.execute("""UPDATE public.employee 
+                SET 
+                 hotel_id = %s,
+                 first_name = %s,
+                middle_name = %s,
+                last_name = %s,
+                street_number = %s,
+                street_name = %s,
+                apt_number = %s,
+                city = %s,
+                province = %s,
+                zip = %s,
+                job_role = %s
+                WHERE ssn = %s
+                 """, ( hotel_id, first_name, middle_name if middle_name else None, last_name,
+        street_number, street_name, apt_number if apt_number else None,
+        city, province, zip, job_role, ssn))
+    
+    conn.commit()
+
+    curr.close()
+    conn.close()
+
+    return redirect(url_for("manage_employees"))
+
+
+
+
+#
+#-------------
+
+
+
+
+#----------------------------------------------------------
+#COPYING CODE FROM PREVIOUS METHODS
+#FOR HOTEL
+#----------------------------------------------------------
 @app.route("/manage_hotels")
 def manage_hotels():
-    return render_template("manage_hotels.html")
+    conn = get_db_connection()
+    cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
+    cur.execute("""SELECT * FROM public.hotel_chain hc 
+                JOIN public.hotel h ON  h.chain_id = hc.chain_id 
+                WHERE h.hotel_id = %s""", (session["hotel_id"],))
+    chains = cur.fetchall()
+
+    mapOfChains = chains[0]
+
+    cur.execute("""SELECT * FROM public.hotel WHERE chain_id = %s""", (mapOfChains["chain_id"],))
+
+    hotels = cur.fetchall()
+
+    edit_id = request.args.get("edit")
+    editing = None
+
+    if edit_id:
+        cur.execute("""
+            SELECT *
+            FROM public.hotel
+            WHERE hotel_id = %s
+        """, (edit_id,))
+        editing = cur.fetchone()
+
+
+    cur.close()
+    conn.close()
+
+    return render_template("manage_hotels.html", chains = chains, editing = editing, hotels = hotels)
+        
+
+
+@app.route("/manage/hotels/delete/<int:hid>", methods=["POST"])
+def delete_hotels(hid):
+    conn = get_db_connection()
+    curr = conn.cursor()
+
+    try:
+        # 1. Remove manager reference (important for your trigger)
+        curr.execute("""
+            UPDATE public.hotel
+            SET manager_ssn = NULL
+            WHERE hotel_id = %s
+        """, (hid,))
+
+        # 2. Either delete or detach employees
+        curr.execute("""
+            DELETE FROM public.employee
+            WHERE hotel_id = %s
+        """, (hid,))
+
+        # 3. Now delete hotel
+        curr.execute("""
+            DELETE FROM public.hotel
+            WHERE hotel_id = %s
+        """, (hid,))
+
+        conn.commit()
+
+    except Exception as e:
+        conn.rollback()
+        raise e
+
+    finally:
+        curr.close()
+        conn.close()
+
+    return redirect(url_for("manage_hotels"))
+
+@app.route("/add_hotel", methods=["POST"])
+def add_hotel():
+    street_number = request.form["street_number"]
+    street_name = request.form["street_name"]
+    apt_number = request.form["apt_number"]
+
+    city = request.form["city"]
+    province = request.form["province"]
+    zip = request.form["zip"]
+
+    chain_id = request.form["chain_id"]
+    star_number = request.form["star_number"]
+
+    conn = get_db_connection()
+    curr = conn.cursor()
+
+    try:
+        curr.execute("""
+            INSERT INTO public.hotel (
+                chain_id, manager_ssn,
+                street_number, street_name, apt_number,
+                city, province, zip, star_number
+            )
+            VALUES (%s, NULL, %s, %s, %s, %s, %s, %s, %s)
+        """, (
+            chain_id,
+            street_number,
+            street_name,
+            apt_number if apt_number else None,
+            city,
+            province,
+            zip,
+            star_number
+        ))
+
+        conn.commit()
+
+    except Exception as e:
+        conn.rollback()
+        raise e
+
+    finally:
+        curr.close()
+        conn.close()
+
+    return redirect(url_for("manage_hotels"))
+
+
+@app.route("/edit_hotel/<int:hid>", methods=["POST"])
+def edit_hotel(hid):
+    street_number = request.form["street_number"]
+    street_name = request.form["street_name"]
+    apt_number = request.form["apt_number"]
+
+    city = request.form["city"]
+    province = request.form["province"]
+    zip = request.form["zip"]
+
+    chain_id = request.form["chain_id"]
+    star_number = request.form["star_number"]
+    manager_ssn = request.form["manager_ssn"]
+
+    conn = get_db_connection()
+    curr = conn.cursor()
+
+    try:
+        # First make this employee work at this hotel and become manager
+        curr.execute("""
+            UPDATE public.employee
+            SET hotel_id = %s,
+                job_role = 'manager'
+            WHERE ssn = %s
+        """, (hid, manager_ssn))
+
+        # Then update the hotel
+        curr.execute("""
+            UPDATE public.hotel
+            SET chain_id = %s,
+                manager_ssn = %s,
+                street_number = %s,
+                street_name = %s,
+                apt_number = %s,
+                city = %s,
+                province = %s,
+                zip = %s,
+                star_number = %s
+            WHERE hotel_id = %s
+        """, (
+            chain_id,
+            manager_ssn,
+            street_number,
+            street_name,
+            apt_number if apt_number else None,
+            city,
+            province,
+            zip,
+            star_number,
+            hid
+        ))
+
+        conn.commit()
+
+    except Exception as e:
+        conn.rollback()
+        raise e
+
+    finally:
+        curr.close()
+        conn.close()
+
+    return redirect(url_for("manage_hotels"))
+
+#THE END OF THE COPIED CODE
 
 @app.route("/manage_rooms")
 def manage_rooms():
