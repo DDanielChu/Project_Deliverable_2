@@ -133,6 +133,45 @@ def home():
     session.clear()
     return render_template("home_page.html")
 
+    # list = get_data_from_database(None, None, None, None, None,  None, None, None)
+
+    # string = ""
+
+    # for x in list:
+    #     string += str(x) +"<br><br>"
+
+    # return string
+
+
+
+
+@app.route("/rooms")
+def room():
+    capacity = request.args.get("capacity")
+    price = request.args.get("price")
+    area = request.args.get("area")
+
+    string = ""
+
+    if capacity:
+        string += f" Capacity Received: {capacity}"
+    else:
+        string += " No Capacity Received"
+
+    if price:
+        string += f" Price Received: {price}"
+    else:
+        string += " No Price Received"
+
+    if area:
+        
+        string += f" Area Received: {area}"
+    else:
+        string += " No Area Received"
+
+    return "Rooms route is working " + string  
+
+
 
 @app.route("/set-role", methods=["POST"])
 def set_role():
@@ -446,11 +485,36 @@ def employee_login():
 @app.route("/employee_dashboard")
 def employee_dashboard():
     
+    conn = get_db_connection()
+    curr = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+
+    hotel_id = session["hotel_id"]
+
+    curr.execute(""" SELECT b.booking_id, b.customer_id, c.first_name, c.last_name, b.room_id, b.start_date, b.end_date, b.status, r.price
+                FROM public.booking b
+                JOIN customer c ON b.customer_id = c.customer_id
+                JOIN room r ON b.hotel_id = r.hotel_id AND b.room_id = r.room_id
+                WHERE b.hotel_id = %s AND b.status IN ('PENDING', 'CONFIRMED')
+                ORDER BY b.start_date
+                """, (hotel_id,))
+    
+
+
+    pending = curr.fetchall()
+
+    curr.close()
+    conn.close()
+
+    return render_template("employee_dashboard.html", pending=pending)
+
+
+@app.route("/employee/checkin/<int:bid>", methods=["POST"])
+def checkin(bid):
 
 
 
 
-    return render_template("employee_dashboard.html")
+    return redirect(url_for("employee_dashboard"))
 
 
 #EVERYTHING STARTING FROM HERE IS RELATED TO THE MANAGING OF CUSTOMERS
