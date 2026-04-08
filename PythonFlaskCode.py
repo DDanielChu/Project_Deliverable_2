@@ -516,6 +516,7 @@ def checkin(bid):
     conn = get_db_connection()
     curr = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
+
     curr.execute("""
         SELECT * FROM public.booking WHERE booking_id = %s
     """, (bid,))
@@ -540,6 +541,7 @@ def checkin(bid):
         booking["start_date"], booking["end_date"],
         booking["price"], payment_method
     ))
+
 
     conn.commit()
     curr.close()
@@ -717,7 +719,132 @@ def manage_hotels():
 
 @app.route("/manage_rooms")
 def manage_rooms():
-    return render_template("manage_rooms.html")
+    conn = get_db_connection()
+    cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+
+    cur.execute("""
+        SELECT r.hotel_id,
+               r.room_id,
+               r.price,
+               r.capacity_of_room,
+               r.type_of_view,
+               r.extension_of_bed,
+               h.city,
+               h.province
+        FROM public.room r
+        JOIN public.hotel h ON r.hotel_id = h.hotel_id
+        ORDER BY r.hotel_id, r.room_id
+    """)
+    rooms = cur.fetchall()
+
+    cur.execute("""
+        SELECT hotel_id, city, province
+        FROM public.hotel
+        ORDER BY city
+    """)
+    hotels = cur.fetchall()
+
+    editing = None
+    edit_hid = request.args.get("edit_hid")
+    edit_rid = request.args.get("edit_rid")
+
+    if edit_hid and edit_rid:
+        cur.execute("""
+            SELECT r.hotel_id,
+                   r.room_id,
+                   r.price,
+                   r.capacity_of_room,
+                   r.type_of_view,
+                   r.extension_of_bed
+            FROM public.room r
+            WHERE r.hotel_id = %s
+              AND r.room_id = %s
+        """, (edit_hid, edit_rid))
+        editing = cur.fetchone()
+
+    cur.close()
+    conn.close()
+
+    return render_template("manage_rooms.html", rooms=rooms, hotels=hotels, editing=editing)
+
+
+@app.route("/manage/rooms/delete/<int:hid>/<int:rid>", methods=["POST"])
+def delete_room(hid, rid):
+    conn = get_db_connection()
+    curr = conn.cursor()
+
+    curr.execute("""
+        DELETE FROM public.room r
+        WHERE r.hotel_id = %s
+          AND r.room_id = %s
+    """, (hid, rid))
+
+    conn.commit()
+    curr.close()
+    conn.close()
+
+    return redirect(url_for("manage_rooms"))
+
+
+@app.route("/add_room", methods=["POST"])
+def add_room():
+    hotel_id        = request.form["hotel_id"]
+    room_id         = request.form["room_id"]
+    price           = request.form["price"]
+    capacity_of_room = request.form["capacity_of_room"]
+    type_of_view    = request.form["type_of_view"]
+    extension_of_bed = request.form["extension_of_bed"]
+
+    conn = get_db_connection()
+    curr = conn.cursor()
+
+    curr.execute("""
+        INSERT INTO public.room (
+            hotel_id, room_id, price,
+            capacity_of_room, type_of_view, extension_of_bed
+        )
+        VALUES (%s, %s, %s, %s, %s, %s)
+    """, (
+        hotel_id, room_id, price,
+        capacity_of_room, type_of_view, extension_of_bed
+    ))
+
+    conn.commit()
+    curr.close()
+    conn.close()
+
+    return redirect(url_for("manage_rooms"))
+
+
+@app.route("/edit_room/<int:hid>/<int:rid>", methods=["POST"])
+def edit_room(hid, rid):
+    price            = request.form["price"]
+    capacity_of_room = request.form["capacity_of_room"]
+    type_of_view     = request.form["type_of_view"]
+    extension_of_bed = request.form["extension_of_bed"]
+
+    conn = get_db_connection()
+    curr = conn.cursor()
+
+    curr.execute("""
+        UPDATE public.room
+        SET price            = %s,
+            capacity_of_room = %s,
+            type_of_view     = %s,
+            extension_of_bed = %s
+        WHERE hotel_id = %s
+          AND room_id  = %s
+    """, (
+        price, capacity_of_room,
+        type_of_view, extension_of_bed,
+        hid, rid
+    ))
+
+    conn.commit()
+    curr.close()
+    conn.close()
+
+    return redirect(url_for("manage_rooms"))
 
 
 
